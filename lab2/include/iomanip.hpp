@@ -7,51 +7,36 @@
 #include <cmath>
 #include <string>
 
-namespace ioex {
-
-//======================== endm ========================
+// ===== endm =====
 inline std::ostream& endm(std::ostream& os) {
     os << "[eol]\n";
     return os;
 }
 
-//========================= sin ========================
-struct sin_t { };
-inline constexpr sin_t sin{};
+// ===== sine (одиночный операнд) =====
+struct sine_t { };
+inline constexpr sine_t sine{};
 
-struct sin_proxy {
+struct sine_proxy {
     std::ostream& os;
 
-    template <class T,
-              std::enable_if_t<std::is_arithmetic_v<T>, int> = 0>
-    std::ostream& operator<<(const T& value) {
-        const double r = std::sin(static_cast<double>(value));
-        if (r == 0.0) {
-            os << "0.0";      // требование: 0 -> 0.0
+    template <class T>
+    std::ostream& operator<<(T&& v) {
+        using D = std::decay_t<T>;
+        if constexpr (std::is_arithmetic_v<D>) {
+            const double r = std::sin(static_cast<double>(v));
+            if (r == 0.0) os << "0.0";
+            else          os << r;
         } else {
-            os << r;
+            os << "sine(" << std::forward<T>(v) << ")";
         }
-        return os;
-    }
-
-    template <class T,
-              std::enable_if_t<!std::is_arithmetic_v<T>, int> = 0>
-    std::ostream& operator<<(const T& value) {
-        os << "sin(" << value << ")";
-        return os;
-    }
-
-    std::ostream& operator<<(const char* s) {
-        os << "sin(" << s << ")";
         return os;
     }
 };
 
-inline sin_proxy operator<<(std::ostream& os, sin_t) {
-    return sin_proxy{os};
-}
+inline sine_proxy operator<<(std::ostream& os, sine_t) { return { os }; }
 
-//========================= add ========================
+// ===== add (два операнда) =====
 struct add_t { };
 inline constexpr add_t add{};
 
@@ -63,22 +48,18 @@ struct add_proxy0 {
         std::ostream& os_;
         A a_;
         template <class B>
-        std::ostream& operator<<(const B& b) {
-            os_ << (a_ + b);
+        std::ostream& operator<<(B&& b) {
+            os_ << (a_ + std::forward<B>(b));
             return os_;
         }
     };
 
     template <class T>
     add_proxy1<std::decay_t<T>> operator<<(T&& a) {
-        return add_proxy1<std::decay_t<T>>{os, std::forward<T>(a)};
+        return { os, std::forward<T>(a) };
     }
 };
 
-inline add_proxy0 operator<<(std::ostream& os, add_t) {
-    return add_proxy0{os};
-}
-
-} // namespace ioex
+inline add_proxy0 operator<<(std::ostream& os, add_t) { return { os }; }
 
 #endif // __IOMANIP_HPP__
