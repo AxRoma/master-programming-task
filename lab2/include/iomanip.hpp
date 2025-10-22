@@ -22,8 +22,8 @@ struct sine_proxy {
 
     template <class T>
     std::ostream& operator<<(T&& v) {
-        using D = std::decay_t<T>;
-        if constexpr (std::is_arithmetic_v<D>) {
+        using D = std::decay_t<T>;    // избавляемся от сслыки
+        if constexpr (std::is_arithmetic_v<D>) { // 
             const double r = std::sin(static_cast<double>(v));
             if (r == 0.0) os << "0.0";
             else          os << r;

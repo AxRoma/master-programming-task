@@ -13,22 +13,29 @@ template<class T, class MutexInjection = std::mutex>
 class ptr_holder
 {
 public:
-    ptr_holder(T* ptr): ptr_(ptr) {}
+    explicit ptr_holder(T* ptr) : ptr_(ptr) {}
 
     //{ describe proxy object
-    class proxy: private ???
+    class proxy : private std::lock_guard<MutexInjection>
     {
+        using guard_t = std::lock_guard<MutexInjection>;
+
     public:
-        proxy(???): ???
-        {}
+        // Захватываем мьютекс в конструкторе (RAII) и запоминаем указатель.
+        proxy(T* p, MutexInjection& m) : guard_t(m), ptr_(p) {}
+
+        // Доступ к "сырому" указателю (неконстантный и константный варианты).
+        T* operator->() { return ptr_; }
+        const T* operator->() const { return ptr_; }
 
     private:
-        ???
+        T* ptr_;
     };
 
-    ??? operator -> () const
+    // Возвращаем временный proxy-объект.
+    proxy operator->() const
     {
-        return ???;
+        return proxy(ptr_, mutex_);
     }
     //}
 
